@@ -1,0 +1,175 @@
+# This is a sample menu.lst file. You should make some changes to it.
+# The old install method of booting via the stage-files has been removed.
+# Please install GRLDR boot strap code to MBR with the bootlace.com
+# utility under DOS/Win9x or Linux.
+
+color blue/green yellow/red white/magenta white/magenta
+timeout 30
+default /default
+
+#pxe detect
+#configfile
+
+pxe detec
+configfil
+
+# PE
+
+title find and boot PE.iso
+	fallback 1
+	set ISOFILE=/PE.iso
+	find --set-root %ISOFILE%
+	map %ISOFILE% (0xff) || map --mem %ISOFILE% (0xff)
+	map --hook
+	chainloader (0xff)
+	savedefault --wait=2
+
+# Grub2
+
+title Chainload Grub2
+	find --set-root /boot/grub/i386-pc/core.img
+	kernel /boot/grub/i386-pc/core.img
+	boot
+
+# Windows
+
+title find and load BOOTMGR of Windows VISTA and newer
+	find --set-root --ignore-floppies /bootmgr
+	chainloader /bootmgr
+	savedefault --wait=2
+
+title find and load NTLDR of Windows NT/2K/XP
+	find --set-root --ignore-floppies /ntldr
+	chainloader /ntldr
+	savedefault --wait=2
+
+title find and load CMLDR, the Recovery Console of Windows NT/2K/XP
+	find --set-root --ignore-floppies /cmldr
+	chainloader /cmldr
+	#####################################################################
+	# write string "cmdcons" to memory 0000:7C03 in 2 steps:
+	#####################################################################
+	# step 1. Write 4 chars "cmdc" at 0000:7C03
+	write 0x7C03 0x63646D63
+	# step 2. Write 3 chars "ons" and an ending null at 0000:7C07
+	write 0x7C07 0x00736E6F
+	savedefault --wait=2
+
+title find and load IO.SYS of Windows 9x/Me
+	fallback 4
+	find --set-root /io.sys
+	chainloader /io.sys
+	savedefault --wait=2
+
+# Linux
+
+title CentOS
+    root (hd1,1)
+    kernel /boot/vmlinuz-2.6.32-279.el6.x86_64 ro root=/dev/sdb2 rd_NO_LUKS  KEYBOARDTYPE=pc KEYTABLE=us rd_NO_MD crashkernel=128M LANG=zh_CN.UTF-8 rd_NO_LVM rd_NO_DM rhgb quiet
+    initrd /boot/initramfs-2.6.32-279.el6.x86_64.img
+
+title Install Ubuntu
+	find --set-root /ubuntu.iso
+	kernel /vmlinuz.efi boot=casper iso-scan/filename=/ubuntu.iso locale=zh_CN.UTF-8
+	initrd /initrd.lz
+	boot
+
+title Ubuntu 12.04.2
+	find --set-root /boot/grub/core.img
+	kernel /boot/grub/core.img
+	boot
+
+title Ubuntu 12.04
+	root=(hd0,1)
+	kernel	/boot/vmlinuz-3.2.0-24-generic-pae root=/dev/sda2 ro quiet splash $vt_handoff
+	initrd	/boot/initrd.img-3.2.0-24-generic-pae
+	boot
+
+title OpenSUSE
+	root=(hd0,2)
+	kernel	/boot/vmlinuz-3.1.10-1.9-desktop resume=/dev/disk/by-id/ata-Hitachi_HTS725050A9A364_110215PCK404GLGW817J-part10 splash=silent quiet showopts
+	initrd	/boot/initrd-3.1.10-1.9-desktop
+	boot
+
+title Install Fedora LiveCD
+	root (hd0,3)
+	kernel /LiveOS/vmlinuz0 root=live:/dev/sda4 ro liveimg rghb rootfstype=auto
+	initrd /LiveOS/initrd0.img
+
+title Install Fedora DVD
+	root (hd0,6)
+	kernel vmlinuz linux askmethod repo= hd:/dev/sda7:/fedora
+	initrd initrd.img
+
+title Fedora
+	root=(hd0,5)
+	kernel	/boot/vmlinuz-3.1.0-7.fc16.i686 root=/dev/sda2 ro rd.md=0 rd.lvm=0 rd.dm=0  KEYTABLE=us quiet SYSFONT=latarcyrheb-sun16 rhgb rd.luks=0 LANG=en_US.UTF-8
+	initrd	/boot/initramfs-3.1.0-7.fc16.i686.img
+	boot
+
+title Install CentOS
+	root (hd2,3)
+	kernel /vmlinuz
+	initrd /initrd.img
+
+title Install CentOS LiveCD
+	root (hd2,3)
+	kernel /LiveOS/vmlinuz0 root=live:/dev/sdc4 ro liveimg rghb rootfstype=auto
+	initrd /LiveOS/initrd0.img
+
+title Install RadHat 6.3
+	root (hd2,0)
+	kernel /vmlinuz boot=casper find_iso=/filename=/rhel-server-6.3-x86_64-dvd.iso
+	initrd /initrd.img
+
+# For booting GNU/Linux on /dev/sda1 (U.S.B. flash drive partition)
+	title Puppy Linux
+	rootnotify (hd0,0)
+	kernel (hd0,0)/vmlinuz pmedia=usbflash
+	initrd (hd0,0)/initrd.gz
+
+title Install Archlinux
+	set ISOFILE=/arch/archlinux-2014.05.01-dual.iso
+	find --set-root %ISOFILE%
+	kernel /arch/vmlinuz archisolabel=ARCH_201405
+	initrd /arch/archiso.img
+
+# other
+
+title commandline
+	commandline
+
+title Load Grub2 config them commandline
+	find /menu.lst, /boot/grub/menu.lst, /grub/menu.lst
+	errorcheck off
+	configfile /menu.lst
+	configfile /boot/grub/menu.lst
+	configfile /grub/menu.lst
+	find --set-root --ignore-floppies --ignore-cd /menu.lst && configfile /menu.lst
+	find --set-root --ignore-floppies --ignore-cd /boot/grub/menu.lst && configfile /boot/grub/menu.lst
+	find --set-root --ignore-floppies --ignore-cd /grub/menu.lst && configfile /grub/menu.lst
+	errorcheck on
+	commandline
+
+title back to dos
+	quit
+
+title floppy (fd0)
+	chainloader (fd0)+1
+	rootnoverify (fd0)
+
+title MAXDOS.IMG
+	find --set-root --ignore-floppies /boot/MAXDOS.IMG
+	map --mem /boot/MAXDOS.IMG (fd0)
+	map --hook
+	chainloader (fd0)+1
+	rootnoverify (fd0)
+
+title commandline
+	commandline
+
+title reboot
+	reboot
+
+title halt
+	halt
