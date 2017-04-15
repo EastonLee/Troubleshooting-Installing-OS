@@ -5,40 +5,37 @@ When you update your OS or install another one, you are taking risks of failing 
 Here I record my regular process of installing OSes.
 
 1. Backup: Often it takes a long while but it's worth it.
-1. Format a Flash Disk to FAT32/exFAT, this is for compatibility of GRUB2, if your GRUB2 has embedded NTFS mod or other support, you can format your Flash Disk to corresponding filesystem.
-1. Install GRUB2 to the boot sectors of your Flash Disk, usually you can do it easily in Linux with `grub-install` command, or in Windows with this powerful tool called **Bootice**.
-1. Copy the directories `boot` and `grub` into your Flash Disk. `boot` is for GRUB2 images and configuration, `grub` is for GRUB4DOS, I just keep GRUB4DOS in case and GRUB2 is enough in theory.
-1. Also carry your handy tools with you, like PE.iso and so on, I have a [list](./tools_you_need.txt) here for you.
+1. Partition and format a Flash Disk or an internal disk partition. Your should reserve 64 sectors for GRUB2 image Flash Disk (TODO: details). Then format it to FAT32/exFAT, this is for compatibility of GRUB2, if your GRUB2 has embedded NTFS mod or other support, you can format your Flash Disk to corresponding filesystem types. [^1]
+1. Install GRUB2 to the boot sectors of your Flash Disk or internal disk, usually you can do it easily in Linux with `grub-install` command, or in Windows with this powerful tool called **Bootice**.
+1. Copy the directories `boot` and `grub` into your Flash Disk or internal partition. `boot` is for GRUB2 images, mods and configurations, `grub` is for GRUB4DOS, I just keep GRUB4DOS in case and GRUB2 is enough in theory.
+1. Also carry your handy tools with you, I have a [list](./tools_you_need.md) here for you.
 
 # Install Linux
 
-GRUB2 is able to boot Linux iso file using MEMDISK of Syslinux, but often ends up with initramfs error.
+GRUB2 is able to boot Linux iso file using MEMDISK of Syslinux, but often ends up with initramfs error. So you'd better Google the Linux distribution and figure out the location of its kernel file and initrd file, then use GRUB2 `loopback, linux and initrd` commands to mount and boot that iso. The rest installing is too easy.
 
 # Install Windows
 
-## 如果要Update，保留原Windows.old
+## If you want to "Upgrade" your Windows and keep your personal files
 
-* MRB启动BOOTMGR方法：先把iso文件解压，放在某个分区根目录，并把该分区升为primary分区，并且active，PBR改为BOOTMGR，MBR改为BOOTMGR，再次启动就会自动安装了。
-* grub2启动bootmgr方法：大致相同，只是在硬盘上安装grub2（要求grub2能够找到grub.cfg，最好把grub.cfg放在fat32文件系统）
-* 
-menuentry 'install win10'{
-    insmod ntfs
-    set bootmgr_path=/bootmgr
-    search --set -f ${bootmgr_path}
-    ntldr /bootmgr
-    boot
-}
+If you want to keep files in like `Desktop, Documents, Pictures ... and many settings`, you have to guarantee you can log in old Windows, then mount the Windows Installer iso file and execute the `setup.exe`. If you can't log in the old Windows, then I don't think you can "upgrade", at least I tried to "upgrade" Windows 7 to Windows 10 in `PE.iso->setup.exe` and `extract Windows 10 iso and boot those extract files with BOOTMGR` methods, neither of them worked, Windows 10 installer always told me I must execute "upgrade" in a old running Windows.
 
-* 理论上讲，可以用硬盘上的grub2直接启动iso文件，但是测试用grub2启动官方win10.iso失败，屏幕上都是黄色，伴有闪烁白色条纹。所以目前只能解压iso安装
-* 不要用移动磁盘上的grub2启动硬盘上的bootmgr，win10检测到启动盘与安装盘不同，会发生“we couldn't create a new partition or locate an existing one”的错误
-* 如果想把grub2装在硬盘上，请保证你的引导扇区中的grub2 image支持NTFS，或者你有一个（小）分区是fat32格式的（bootice包含的grub2 image不支持NTFS），把你的/boot目录拷入这个文件系统
+## If you don't care rewrite the old Windows partition entirely
 
-## 如果不要Update，直接覆盖整个系统盘内容
+Then you have many options:
 
-* grub2本身可以启动光盘，例如PE.iso，再用ghost或者wim覆盖安装
+* Enter PE.iso, write the wim file extracted from iso. (noqa for Windows 10)
+* Extract Windows iso file to the root directory of certain volume, then make sure your disk will use BOOTMGR to starup and it can find the `bootmgr` file in the above volume[^2].
+* Burn a DVD and install.
+* If you have backed up the image of your system partition, just restore it.
+* But it seems that you can't just start from GRUB2 on disk and `linux16 /boot/memdisk iso raw; initrd16 ${iso_path}`, it just failed with flashing screen, not sure why.
 
 # Random Thoughts
 
-Windows is always a trouble maker, if a Windows 10 shuts down, it lock this disk in hibernation mode, causing other OSes suffer, you must "restart" Windows 10, and make the "restart" process stop when it's trying to restart, or forcibly shut it. If Windows is install after Linux, it will make Linux unbootable, but Linux always has Windows in mind. 
+Windows is always a trouble maker, if a Windows 10 shuts down, it lock this disk in hibernation mode, causing other OSes suffer, you must "restart" Windows 10, and make the "restart" process stop when it's trying to restart, or forcibly shut it. If Windows is installed after Linux, it will make Linux unbootable, but Linux always has Windows in mind. 
 
-Windows is very prone to break itself, when you accidentally interrupt an update, 
+[^1]: I need emphasize this again, when you install GRUB2 to internal disk, also remember to have a FAT32/exFAT partition to hold GRUB2 images, mods and configurations, this is for compatibility of GRUB2, if your GRUB2 has embedded NTFS mod or other support, you can format that partition to corresponding filesystem types.
+
+[^2]: When you use this method, you should guarantee your system will be started by the disk you will install Windows into, you can't start from your removable disk but install Windows into a internal disk. To guarantee this, there are some ways:
+* Write MBR to disk's first sector, with partition containing iso extracts set as primary and active, write BOOTMGR bootloader to partition's first sector, restart from disk.
+* Write GRUB2 or GRUB4DOS to disk's first sector, configure GRUB to use `ntldr ${installer_partition}/bootmgr` to boot the Windows installer.

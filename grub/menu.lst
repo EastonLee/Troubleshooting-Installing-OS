@@ -13,7 +13,14 @@ default /default
 pxe detec
 configfil
 
-# PE
+# Grub2
+
+title Chainload Grub2
+	find --set-root /boot/grub/i386-pc/core.img
+	kernel /boot/grub/i386-pc/core.img
+	boot
+
+# Windows
 
 title find and boot PE.iso
 	fallback 1
@@ -23,15 +30,6 @@ title find and boot PE.iso
 	map --hook
 	chainloader (0xff)
 	savedefault --wait=2
-
-# Grub2
-
-title Chainload Grub2
-	find --set-root /boot/grub/i386-pc/core.img
-	kernel /boot/grub/i386-pc/core.img
-	boot
-
-# Windows
 
 title find and load BOOTMGR of Windows VISTA and newer
 	find --set-root --ignore-floppies /bootmgr
